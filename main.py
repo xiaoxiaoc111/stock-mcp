@@ -2,7 +2,11 @@ from fastapi import FastAPI, Request
 import requests
 
 app = FastAPI()
-API_KEY = "UO39O45CR7OKCEOD"  # 你的 Alpha Vantage API Key
+API_KEY = "UO39O45CR7OKCEOD"
+
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
 
 @app.post("/stock")
 async def get_stock(request: Request):
