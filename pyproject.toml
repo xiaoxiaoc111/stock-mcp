@@ -1,0 +1,13 @@
+[project]
+name = "stock-mcp"
+version = "0.1.0"
+description = "Alpha Vantage 股票查询服务"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "requests"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
