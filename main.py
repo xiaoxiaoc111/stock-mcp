@@ -1,30 +1,46 @@
 from fastapi import FastAPI, Request
-import requests
+from stock_logic import fetch_stock_price, format_markdown_table, risk_analysis
 
 app = FastAPI()
-API_KEY = "UO39O45CR7OKCEOD"
-
-@app.get("/")
-def health_check():
-    return {"status": "ok"}
 
 @app.post("/stock")
-async def get_stock(request: Request):
+async def stock_handler(request: Request):
     body = await request.json()
     messages = body.get("messages", [])
-    if not messages:
-        return {"error": "No messages provided"}
-    
     user_message = messages[-1].get("content", "")
-    symbol = user_message.split()[0].upper()  # 简单提取股票代码
     
-    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={API_KEY}"
-    response = requests.get(url)
-    data = response.json().get("Global Quote", {})
+    # 支持多股查询：TSLA, AAPL, NVDA
+    symbols = [s.strip().upper() for s in user_message.replace("，", ",").split(",")]
+    prices = {symbol: fetch_stock_price(symbol) for symbol in symbols}
+    
+    markdown = format_markdown_table(prices)
+    risk = risk_analysis(prices)
     
     return {
-        "symbol": symbol,
-        "price": data.get("05. price", "N/A"),
-        "change": data.get("09. change", "N/A"),
-        "percent": data.get("10. change percent", "N/A")
+        "markdown": markdown,
+        "risk": risk,
+        "raw": prices
     }
+
+@app.post("/proxy")
+async def proxy_handler(request: Request):
+    body = await request.json()
+    messages = body.get("messages", [])
+    user_message = messages[-1].get("content", "")
+    
+    # 构造模拟请求体转发到 /stock
+    symbols = [s.strip().upper() for s in user_message.replace("，", ",").split(",")]
+    prices = {symbol: fetch_stock_price(symbol) for symbol in symbols}
+    
+    markdown = format_markdown_table(prices)
+    risk = risk_analysis(prices)
+    
+    return {
+        "markdown": markdown,
+        "risk": risk,
+        "raw": prices
+    }
+
+@app.get("/")
+def health():
+    return {"status": "ok"}
